@@ -1,0 +1,134 @@
+# Kent Martin (kent@kentsworld.com)
+# 2015-11-14
+#
+# To use put the following in your .bashrc
+# export PROMPT_COMMAND="source /path/to/git_unicode_prompt"
+#
+### Configure colours below, after colors are defined
+# We need to collect errors before anything else
+EXIT_CODES=("${PIPESTATUS[@]}")
+
+BLACK='\[\033[0;30m\]' # Black - Regular
+RED='\[\033[0;31m\]' # Red
+GREEN='\[\033[0;32m\]' # Green
+YELLOW='\[\033[0;33m\]' # Yellow
+BLUE='\[\033[0;34m\]' # Blue
+PURPLE='\[\033[0;35m\]' # Purple
+CYAN='\[\033[0;36m\]' # Cyan
+WHITE='\[\033[0;37m\]' # White
+BOLD_BLACK='\[\033[1;30m\]' # Black - Bold
+BOLD_RED='\[\033[1;31m\]' # Red
+BOLD_GREEN='\[\033[1;32m\]' # Green
+BOLD_YELLOW='\[\033[1;33m\]' # Yellow
+BOLD_BLUE='\[\033[1;34m\]' # Blue
+BOLD_PURPLE='\[\033[1;35m\]' # Purple
+BOLD_CYAN='\[\033[1;36m\]' # Cyan
+BOLD_WHITE='\[\033[1;37m\]' # White
+UNDERLINED_BLACK='\[\033[4;30m\]' # Black - Underline
+UNDERLINED_RED='\[\033[4;31m\]' # Red
+UNDERLINED_GREEN='\[\033[4;32m\]' # Green
+UNDERLINED_YELLOW='\[\033[4;33m\]' # Yellow
+UNDERLINED_BLUE='\[\033[4;34m\]' # Blue
+UNDERLINED_PURPLE='\[\033[4;35m\]' # Purple
+UNDERLINED_CYAN='\[\033[4;36m\]' # Cyan
+UNDERLINED_WHITE='\[\033[4;37m\]' # White
+BACKGROUND_BLACK='\[\033[40m\]'   # Black - Background
+BACKGROUND_RED='\[\033[41m\]'   # Red
+BACKGROUND_GREEN='\[\033[42m\]'   # Green
+BACKGROUND_YELLOW='\[\033[43m\]'   # Yellow
+BACKGROUND_BLUE='\[\033[44m\]'   # Blue
+BACKGROUND_PURPLE='\[\033[45m\]'   # Purple
+BACKGROUND_CYAN='\[\033[46m\]'   # Cyan
+BACKGROUND_WHITE='\[\033[47m\]'   # White
+NORMAL='\e[0m'    # Text Reset
+NORMAL="\[\033[0m\]"
+
+
+### Configure here
+
+
+
+PROMPT_HOSTNAME=$(hostname -s)
+#PROMPT_HOSTNAME="rensa"
+USER_COLOR=${WHITE}			# Color for the username
+ROOT_USER_COLOR=${BOLD_WHITE}${BACKGROUND_RED}		# Color for the username if root
+AT_COLOR=${WHITE}			# Color for the @ in user@host
+HOST_COLOR=${BOLD_PURPLE}			# Color for the host
+WORKING_DIR_COLOR=${BOLD_BLUE}		# Color for the current directory
+ERROR_WRAPPER_COLOR=${BOLD_BLACK}		# Color for the brackets around errors
+ERROR_COLOR=${RED}			# Color for errors - why would you not use red?
+SUCCESS_COLOR=${GREEN}			# Color for success - why would you not use green?
+GIT_BRANCH_COLOR=${YELLOW}		# Color for git branch
+
+
+case "${PROMPT_HOSTNAME}" in 
+some-hostname)
+    PROMPT_HOSTNAME="abc"
+    HOST_COLOR=$BOLD_PURPLE
+    ;;
+some-other-hostname)
+    PROMPT_HOSTNAME="k-laptop"
+    HOST_COLOR=$CYAN
+    ;;
+hotei)
+    HOST_COLOR=$BOLD_BLACK
+    ;;
+loki)
+    HOST_COLOR=$YELLOW
+    ;;
+jester)
+    HOST_COLOR=$GREEN
+    ;;
+esac
+
+if [ $EUID -eq 0 ] ; then
+	SELECTED_USER_COLOR=${ROOT_USER_COLOR}
+else
+	SELECTED_USER_COLOR=${USER_COLOR}
+fi
+
+BRANCH="$(__git_ps1 '%s')"
+if [ "X${BRANCH}" != "X" ] ; then
+	BRANCH=" ${BRANCH}"
+fi
+#if [ "\$(type -t __git_ps1)" ]; then # if we're in a Git repo, show current branch
+	#BRANCH="b \$(__git_ps1 '%s')b"
+#fi
+
+ERROR_OCCURED=0
+unset ERROR_DETAIL
+declare -a ERROR_DETAIL
+for THIS_CODE in ${EXIT_CODES[@]}
+do
+    if [ $THIS_CODE -ne 0 ]
+    then
+        ERROR_OCCURED=1
+	ERROR_DETAIL+=(${ERROR_COLOR}${THIS_CODE}${NORMAL})
+    else
+	ERROR_DETAIL+=("${SUCCESS_COLOR}✔${NORMAL}")
+    fi
+done
+#declare -p ERROR_DETAIL
+
+if [ ${ERROR_OCCURED} -eq 0 ]
+    then
+        #ERROR_DETAIL=""
+#	STATUS_CHAR="✓"
+	STATUS_CHAR="✔"
+	PROMPT_ERROR_DETAIL="${SUCCESS_COLOR}${STATUS_CHAR}${NORMAL}"
+    else
+        ERROR_DETAIL_PRINTABLE="${ERROR_DETAIL[@]}"
+	#STATUS_CHAR="✗"
+	STATUS_CHAR="✘"
+#	STATUS_CHAR="☹"
+	PROMPT_ERROR_DETAIL="${ERROR_WRAPPER_COLOR}(${ERROR_COLOR}${ERROR_DETAIL_PRINTABLE}${ERROR_WRAPPER_COLOR}) ${ERROR_COLOR}${STATUS_CHAR}${NORMAL}"
+	#PROMPT_ERROR_DETAIL="${ERROR_WRAPPER_COLOR}(${NORMAL}${ERROR_COLOR}${ERROR_DETAIL}${NORMAL}${ERROR_WRAPPER_COLOR})${NORMAL} ${ERROR_COLOR}${STATUS_CHAR}${NORMAL}"
+fi
+if [ "X${BRANCH}" == "X " ] ; then
+	BRANCH=""
+fi
+
+# Now put \$ERROR_DETAIL in the prompt.  $? and $PIPESTATUS are preserved
+
+export PS1="${SELECTED_USER_COLOR}\u${NORMAL}${AT_COLOR}@${HOST_COLOR}${PROMPT_HOSTNAME}${NORMAL}${WORKING_DIR_COLOR}\w${GIT_BRANCH_COLOR}${BRANCH} ${PROMPT_ERROR_DETAIL} ${NORMAL}"
+#export PS1="${DKGRAY}(${LIGHTBLUE}${PROMPT_HOSTNAME}${DKGRAY}@${LIGHTBLUE}\h${DKGRAY})${LIGHTBLUE}\w${BLUE}${BRANCH} ${PROMPT_DETAIL} ${NORMAL}"
